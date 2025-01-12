@@ -1,45 +1,96 @@
+#include "../include/help.h"
 #include <filesystem>
 #include <iostream>
 #include <string>
 #include <vector>
 
-void printList(const std::vector<std::string> &, const std::filesystem::path &);
+enum ArgType {
+  HELP,
+  VERSION,
+  DIR,
+  FILES,
+  UNKNOWN,
+};
 
-int main() {
+ArgType getArgType(const std::string &args) {
+  if (args == "help" || args == "man") {
+    return HELP;
+  }
+  if (args == "version") {
+    return VERSION;
+  }
+  if (args == "dir") {
+    return DIR;
+  }
+  if (args == "file") {
+    return FILES;
+  }
+  return UNKNOWN;
+}
+
+void printList(const std::vector<std::string> &, const std::filesystem::path &,
+               bool &);
+
+int main(int argc, char *argv[]) {
+
+  std::cout << "args was " << argv[1] << '\n';
   std::filesystem::path currentDir = std::filesystem::current_path();
   std::cout << "CWD: " << currentDir.string() << "\n\n";
 
-  std::cout << "choose what to do:\n";
-  int choice;
-  std::cin >> choice;
-  std::cout << "\n";
+  bool helpFlag = false, dirFlag = false, fileFlag = false, isFile = false;
 
-  std::vector<std::string> itemsList;
-  std::string temp;
-  switch (choice) {
-  case 2:
-    for (const auto &entry : std::filesystem::directory_iterator(currentDir)) {
-      if (!std::filesystem::is_directory(entry.status())) {
-        itemsList.push_back(entry.path().filename().string());
-      }
+  for (int i = 1; i < argc; ++i) {
+    switch (getArgType(argv[i])) {
+    case HELP:
+      helpFlag = true;
+      break;
+    case DIR:
+      dirFlag = true;
+      break;
+    case FILES:
+      fileFlag = true;
+      break;
+    case VERSION:
+      std::cout << "VERSION 1.0";
+      break;
+    case UNKNOWN:
+      std::cout << "Unknown flag inputted: " << argv[i];
+      break;
+    default:
+      fileFlag = true;
+      break;
     }
-    printList(itemsList, currentDir);
-    break;
-  default:
-    // list all directories
-    for (const auto &entry : std::filesystem::directory_iterator(currentDir)) {
-      if (std::filesystem::is_directory(entry.status())) {
-        itemsList.push_back(entry.path().filename().string());
-      }
-    }
-    printList(itemsList, currentDir);
   }
-  return 0;
+
+  if (helpFlag) {
+    // help options
+    if (dirFlag) {
+      // dir help
+      printDirHelp();
+    } else if (fileFlag) {
+      // file help
+      printFilesHelp();
+    } else {
+      // general help
+      printGeneralHelp();
+    }
+  } else if (dirFlag) {
+    // search dirs
+  } else if (fileFlag) {
+    // search files
+  }
 }
 
-void printList(const std::vector<std::string> &a,
-               const std::filesystem::path &b) {
-  for (const auto &entry : a) {
-    std::cout << b.string() << "\\" << entry << '\n';
+void printList(const std::vector<std::string> &entryList,
+               const std::filesystem::path &currentWorkingDirectory,
+               bool &isFile) {
+  if (isFile) {
+    for (const auto &entry : entryList) {
+      std::cout << currentWorkingDirectory.string() << "\\" << entry << "\n";
+    }
+  } else {
+    for (const auto &entry : entryList) {
+      std::cout << currentWorkingDirectory.string() << "\\" << entry << "\\\n";
+    }
   }
 }
