@@ -22,7 +22,7 @@ ArgType getArgType(const std::string &args) {
   if (args == "dir") {
     return DIR;
   }
-  if (args == "file") {
+  if (args == "file" || args == "") {
     return FILES;
   }
   return UNKNOWN;
@@ -33,32 +33,36 @@ void printList(const std::vector<std::string> &, const std::filesystem::path &,
 
 int main(int argc, char *argv[]) {
 
-  std::cout << "args was " << argv[1] << '\n';
   std::filesystem::path currentDir = std::filesystem::current_path();
   std::cout << "CWD: " << currentDir.string() << "\n\n";
 
   bool helpFlag = false, dirFlag = false, fileFlag = false, isFile = false;
+  std::vector<std::string> entryList;
 
-  for (int i = 1; i < argc; ++i) {
-    switch (getArgType(argv[i])) {
-    case HELP:
-      helpFlag = true;
-      break;
-    case DIR:
-      dirFlag = true;
-      break;
-    case FILES:
-      fileFlag = true;
-      break;
-    case VERSION:
-      std::cout << "VERSION 1.0";
-      break;
-    case UNKNOWN:
-      std::cout << "Unknown flag inputted: " << argv[i];
-      break;
-    default:
-      fileFlag = true;
-      break;
+  if (argc == 1) {
+    fileFlag = true;
+  } else {
+    for (int i = 1; i < argc; ++i) {
+      switch (getArgType(argv[i])) {
+      case HELP:
+        helpFlag = true;
+        break;
+      case DIR:
+        dirFlag = true;
+        break;
+      case FILES:
+        fileFlag = true;
+        break;
+      case VERSION:
+        std::cout << "VERSION 1.0";
+        break;
+      case UNKNOWN:
+        std::cout << "Unknown flag inputted: " << argv[i];
+        break;
+      default:
+        fileFlag = true;
+        break;
+      }
     }
   }
 
@@ -76,8 +80,14 @@ int main(int argc, char *argv[]) {
     }
   } else if (dirFlag) {
     // search dirs
+    std::cout << "dir search" << '\n';
+    isFile = false;
+    printList(entryList, currentDir, isFile);
   } else if (fileFlag) {
     // search files
+    std::cout << "file search" << '\n';
+    isFile = true;
+    printList(entryList, currentDir, isFile);
   }
 }
 
