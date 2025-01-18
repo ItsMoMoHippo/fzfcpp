@@ -12,25 +12,16 @@ enum ArgType {
   UNKNOWN,
 };
 
-ArgType getArgType(const std::string &args) {
-  if (args == "help" || args == "man") {
-    return HELP;
-  }
-  if (args == "version") {
-    return VERSION;
-  }
-  if (args == "dir") {
-    return DIR;
-  }
-  if (args == "file" || args == "") {
-    return FILES;
-  }
-  return UNKNOWN;
-}
+// functions declerations
+ArgType getArgType(const std::string &args);
 
 void printList(const std::vector<std::string> &, const std::filesystem::path &,
                bool &);
 
+void searchDir(const std::filesystem::path &currentWorkingDirectory,
+               std::vector<std::string> &, bool &isFile);
+
+// main
 int main(int argc, char *argv[]) {
 
   std::filesystem::path currentDir = std::filesystem::current_path();
@@ -38,6 +29,7 @@ int main(int argc, char *argv[]) {
 
   bool helpFlag = false, dirFlag = false, fileFlag = false, isFile = false;
   std::vector<std::string> entryList;
+  std::vector<std::string> filteredList;
 
   if (argc == 1) {
     fileFlag = true;
@@ -82,15 +74,42 @@ int main(int argc, char *argv[]) {
     // search dirs
     std::cout << "dir search" << '\n';
     isFile = false;
+    searchDir(currentDir, entryList, isFile);
     printList(entryList, currentDir, isFile);
   } else if (fileFlag) {
     // search files
     std::cout << "file search" << '\n';
     isFile = true;
+    searchDir(currentDir, entryList, isFile);
     printList(entryList, currentDir, isFile);
   }
 }
 
+// function implementation
+/* @param = string,
+ * @return = enum,
+ * converts arguments into enum for processing */
+ArgType getArgType(const std::string &args) {
+  if (args == "help" || args == "man") {
+    return HELP;
+  }
+  if (args == "version") {
+    return VERSION;
+  }
+  if (args == "dir") {
+    return DIR;
+  }
+  if (args == "file") {
+    return FILES;
+  }
+  return UNKNOWN;
+}
+
+/* @ param = std::vector<std::string>,
+ *           std::filesystem::path,
+ *           bool,
+ * @return = void,
+ * prints out given vector, used for printing out file paths */
 void printList(const std::vector<std::string> &entryList,
                const std::filesystem::path &currentWorkingDirectory,
                bool &isFile) {
@@ -101,6 +120,22 @@ void printList(const std::vector<std::string> &entryList,
   } else {
     for (const auto &entry : entryList) {
       std::cout << currentWorkingDirectory.string() << "\\" << entry << "\\\n";
+    }
+  }
+}
+
+/* @param = std::vector<std::string>,
+ *          std::filesystem::path,
+ *          bool,
+ * @return = void,
+ * searches the given directory and then appends each valid result to vector */
+void searchDir(const std::filesystem::path &currentWorkingDirectory,
+               std::vector<std::string> &entryList, bool &isFile) {
+  for (const auto &entry :
+       std::filesystem::recursive_directory_iterator(currentWorkingDirectory)) {
+    if ((isFile && std::filesystem::is_regular_file(entry)) ||
+        (!isFile && std::filesystem::is_directory(entry))) {
+      entryList.push_back(entry.path().string());
     }
   }
 }
