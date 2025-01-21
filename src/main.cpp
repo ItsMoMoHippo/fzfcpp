@@ -1,4 +1,6 @@
 #include "../include/help.h"
+#include <conio.h>
+#include <cstdlib>
 #include <filesystem>
 #include <iostream>
 #include <string>
@@ -13,13 +15,19 @@ enum ArgType {
 };
 
 // functions declerations
-ArgType getArgType(const std::string &args);
+ArgType getArgType(const std::string &);
 
-void printList(const std::vector<std::string> &, const std::filesystem::path &,
+void searchDir(const std::filesystem::path &, std::vector<std::string> &,
                bool &);
 
-void searchDir(const std::filesystem::path &currentWorkingDirectory,
-               std::vector<std::string> &, bool &isFile);
+bool getDynamicInput(std::string &);
+
+std::vector<std::string> filteredResultEntries(const std::vector<std::string> &,
+                                               const std::string &);
+
+void displayResults(const std::vector<std::string> &);
+
+void printAllEntries(const std::vector<std::string> &);
 
 // main
 int main(int argc, char *argv[]) {
@@ -58,6 +66,8 @@ int main(int argc, char *argv[]) {
     }
   }
 
+  std::string input;
+  std::string cache;
   if (helpFlag) {
     // help options
     if (dirFlag) {
@@ -75,13 +85,36 @@ int main(int argc, char *argv[]) {
     std::cout << "dir search" << '\n';
     isFile = false;
     searchDir(currentDir, entryList, isFile);
-    printList(entryList, currentDir, isFile);
+    system("cls");
+    printAllEntries(entryList);
+    while (true) {
+      if (!getDynamicInput(input)) {
+        break;
+      }
+      if (input != cache) {
+        displayResults(filteredResultEntries(entryList, input));
+        std::cout << input;
+        cache = input;
+      }
+    }
+
   } else if (fileFlag) {
     // search files
     std::cout << "file search" << '\n';
     isFile = true;
     searchDir(currentDir, entryList, isFile);
-    printList(entryList, currentDir, isFile);
+    system("cls");
+    printAllEntries(entryList);
+    while (true) {
+      if (!getDynamicInput(input)) {
+        break;
+      }
+      if (input != cache) {
+        displayResults(filteredResultEntries(entryList, input));
+        std::cout << input;
+        cache = input;
+      }
+    }
   }
 }
 
@@ -105,25 +138,6 @@ ArgType getArgType(const std::string &args) {
   return UNKNOWN;
 }
 
-/* @ param = std::vector<std::string>,
- *           std::filesystem::path,
- *           bool,
- * @return = void,
- * prints out given vector, used for printing out file paths */
-void printList(const std::vector<std::string> &entryList,
-               const std::filesystem::path &currentWorkingDirectory,
-               bool &isFile) {
-  if (isFile) {
-    for (const auto &entry : entryList) {
-      std::cout << currentWorkingDirectory.string() << "\\" << entry << "\n";
-    }
-  } else {
-    for (const auto &entry : entryList) {
-      std::cout << currentWorkingDirectory.string() << "\\" << entry << "\\\n";
-    }
-  }
-}
-
 /* @param = std::vector<std::string>,
  *          std::filesystem::path,
  *          bool,
@@ -137,5 +151,49 @@ void searchDir(const std::filesystem::path &currentWorkingDirectory,
         (!isFile && std::filesystem::is_directory(entry))) {
       entryList.push_back(entry.path().string());
     }
+  }
+}
+
+bool getDynamicInput(std::string &input) {
+  if (_kbhit()) {
+    char ch = _getch();
+    if (ch == '\b') {
+      if (!input.empty()) {
+        input.pop_back();
+        std::cout << "\b\b";
+      }
+    } else if (ch == '\r') {
+    } else if (ch == '\e') {
+      return false;
+    } else {
+      input += ch;
+      std::cout << ch;
+    }
+  }
+  return true;
+}
+
+std::vector<std::string>
+filteredResultEntries(const std::vector<std::string> &entries,
+                      const std::string &input) {
+  std::vector<std::string> fL;
+  for (const auto &entry : entries) {
+    if (entry.find(input) != std::string::npos) {
+      fL.push_back(entry);
+    }
+  }
+  return fL;
+}
+
+void displayResults(const std::vector<std::string> &results) {
+  system("cls");
+  for (const auto &result : results) {
+    std::cout << result << '\n';
+  }
+}
+
+void printAllEntries(const std::vector<std::string> &entries) {
+  for (const auto &entry : entries) {
+    std::cout << entry << '\n';
   }
 }
