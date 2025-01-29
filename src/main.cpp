@@ -3,8 +3,10 @@
 #include <cstdlib>
 #include <filesystem>
 #include <iostream>
+#include <ostream>
 #include <string>
 #include <vector>
+// #include "../include/argsParse.h"
 
 enum ArgType {
   HELP,
@@ -16,29 +18,23 @@ enum ArgType {
 
 // functions declerations
 ArgType getArgType(const std::string &);
-
 void searchDir(const std::filesystem::path &, std::vector<std::string> &,
                bool &);
-
 bool getDynamicInput(std::string &);
-
 std::vector<std::string> filteredResultEntries(const std::vector<std::string> &,
                                                const std::string &);
-
 void displayResults(const std::vector<std::string> &);
-
 void printAllEntries(const std::vector<std::string> &);
 
 // main
 int main(int argc, char *argv[]) {
 
   std::filesystem::path currentDir = std::filesystem::current_path();
-  std::cout << "CWD: " << currentDir.string() << "\n\n";
-
   bool helpFlag = false, dirFlag = false, fileFlag = false, isFile = false;
   std::vector<std::string> entryList;
   std::vector<std::string> filteredList;
 
+  // args parsing
   if (argc == 1) {
     fileFlag = true;
   } else {
@@ -66,22 +62,19 @@ int main(int argc, char *argv[]) {
     }
   }
 
+  // program execution dependent on flags
   std::string input;
   std::string cache;
   if (helpFlag) {
     // help options
     if (dirFlag) {
-      // dir help
       printDirHelp();
     } else if (fileFlag) {
-      // file help
       printFilesHelp();
     } else {
-      // general help
       printGeneralHelp();
     }
   } else if (dirFlag) {
-    // search dirs
     std::cout << "dir search" << '\n';
     isFile = false;
     searchDir(currentDir, entryList, isFile);
@@ -97,9 +90,7 @@ int main(int argc, char *argv[]) {
         cache = input;
       }
     }
-
   } else if (fileFlag) {
-    // search files
     std::cout << "file search" << '\n';
     isFile = true;
     searchDir(currentDir, entryList, isFile);
@@ -116,6 +107,8 @@ int main(int argc, char *argv[]) {
       }
     }
   }
+  system("cls");
+  return 0;
 }
 
 // function implementation
@@ -154,6 +147,11 @@ void searchDir(const std::filesystem::path &currentWorkingDirectory,
   }
 }
 
+/* @param = std::string
+ * @return = bool
+ * with a std::string used for editable strind, is used to read console input
+ * used for filtering, bool is to indicate if `escape` is pressed as to exit the
+ * program */
 bool getDynamicInput(std::string &input) {
   if (_kbhit()) {
     char ch = _getch();
@@ -173,27 +171,61 @@ bool getDynamicInput(std::string &input) {
   return true;
 }
 
+/* @param = std::vector<std::string>,
+ *          std::string
+ * @return = std::vector<std::string>
+ * filters a list of strings with an input string,
+ * this is the fuzzy finding part */
 std::vector<std::string>
 filteredResultEntries(const std::vector<std::string> &entries,
                       const std::string &input) {
-  std::vector<std::string> fL;
+  std::vector<std::string> filteredList;
   for (const auto &entry : entries) {
-    if (entry.find(input) != std::string::npos) {
-      fL.push_back(entry);
+    int spot = 0;
+    bool valid = true;
+
+    for (const char &c : input) {
+      spot = entry.find(c, spot);
+      if (spot == std::string::npos) {
+        valid = false;
+        break;
+      }
+      ++spot;
+    }
+    if (valid) {
+      filteredList.push_back(entry);
     }
   }
-  return fL;
+  return filteredList;
 }
 
+/* @param = std::vector<std::string>
+ * @return = void
+ * prints filtered results to console after clearing screen */
 void displayResults(const std::vector<std::string> &results) {
   system("cls");
-  for (const auto &result : results) {
-    std::cout << result << '\n';
+  if (results.size() > 100) {
+    for (int i = 0; i < 100; i++) {
+      std::cout << results[i] << '\n';
+    }
+  } else {
+    for (const auto &result : results) {
+      std::cout << result << '\n';
+    }
   }
 }
 
+/* @param = std::vector<std::string>
+ * @return = void
+ * prints all strings in list to console */
 void printAllEntries(const std::vector<std::string> &entries) {
-  for (const auto &entry : entries) {
-    std::cout << entry << '\n';
+  if (entries.size() > 100) {
+    for (int i = 0; i < 100; i++) {
+      std::cout << entries[i] << '\n';
+    }
+  } else {
+    for (const auto &entry : entries) {
+      std::cout << entry << '\n';
+    }
   }
 }
